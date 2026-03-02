@@ -6,7 +6,7 @@ const AuthView = () => {
   const [isRegistering, setIsRegistering] = useState(false);
 
   return (
-    <section className="flex min-h-screen items-center justify-center px-4 bg-black">
+    <section className="flex min-h-screen items-center justify-center bg-black px-4">
       <div className="relative min-h-[480px] w-[768px] max-w-full overflow-hidden rounded-[30px] bg-white shadow-[0_5px_15px_rgba(0,0,0,0.35)] transition-all duration-700 ease-in-out">
         <div
           className={`absolute top-0 left-0 h-full w-1/2 flex items-center justify-center flex-col px-10 transition-all duration-700 ease-in-out ${
@@ -34,12 +34,12 @@ const AuthView = () => {
           }`}
         >
           <div
-            className={`bg-gradient-to-r from-[#fafafa] to-[#8b8b8b] text-gray-800 relative left-[-100%] h-full w-[200%] transition-all duration-700 ease-in-out ${
+            className={`relative left-[-100%] h-full w-[200%] bg-gradient-to-r from-[#fafafa] to-[#8b8b8b] text-gray-800 transition-all duration-700 ease-in-out ${
               isRegistering ? "translate-x-1/2" : ""
             }`}
           >
             <div
-              className={`absolute top-0 left-0 h-full w-1/2 flex flex-col items-center justify-center px-8 text-center transition-all duration-700 ease-in-out ${
+              className={`absolute top-0 left-0 flex h-full w-1/2 flex-col items-center justify-center px-8 text-center transition-all duration-700 ease-in-out ${
                 isRegistering ? "translate-x-0" : "-translate-x-[200%]"
               }`}
             >
@@ -58,7 +58,7 @@ const AuthView = () => {
             </div>
 
             <div
-              className={`absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-center px-8 text-center transition-all duration-700 ease-in-out ${
+              className={`absolute top-0 right-0 flex h-full w-1/2 flex-col items-center justify-center px-8 text-center transition-all duration-700 ease-in-out ${
                 isRegistering ? "translate-x-[200%]" : ""
               }`}
             >
