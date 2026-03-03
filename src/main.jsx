@@ -1,9 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import FormLogInUsers from "./components/FormLogInUsers";
+import AuthView from "./views/AuthView";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <FormLogInUsers />
+    <AuthView />
   </StrictMode>,
 )
