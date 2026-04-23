@@ -6,17 +6,21 @@ function LoginForm({ onSwitchToRegister, onSwitchToForgot }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const ok = login(email.trim(), password);
-    if (ok) {
+    setLoading(true);
+    try {
+      await login(email.trim(), password);
       navigate("/ventas", { replace: true });
-    } else {
-      setError("Correo o contrase\u00f1a incorrectos.");
+    } catch {
+      setError("Correo o contraseña incorrectos.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,7 +44,7 @@ function LoginForm({ onSwitchToRegister, onSwitchToForgot }) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:px-2 focus:outline-none  caret-white focus:placeholder-transparent focus:text-white"
+          className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:px-2 focus:outline-none caret-white focus:placeholder-transparent focus:text-white"
           required
         />
       </div>
@@ -52,7 +56,7 @@ function LoginForm({ onSwitchToRegister, onSwitchToForgot }) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:px-2 focus:outline-none  caret-white focus:placeholder-transparent focus:text-white"
+          className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:px-2 focus:outline-none caret-white focus:placeholder-transparent focus:text-white"
           required
         />
       </div>
@@ -65,9 +69,10 @@ function LoginForm({ onSwitchToRegister, onSwitchToForgot }) {
 
       <button
         type="submit"
-        className="py-2 px-4 bg-white hover:scale-[1.05] text-gray-800 w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md cursor-pointer rounded-xl"
+        disabled={loading}
+        className="py-2 px-4 bg-white hover:scale-[1.05] text-gray-800 w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md cursor-pointer rounded-xl disabled:opacity-60"
       >
-        Iniciar Sesion
+        {loading ? "Ingresando..." : "Iniciar Sesión"}
       </button>
 
       <div className="mt-4 text-center">
