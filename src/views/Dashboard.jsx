@@ -1,48 +1,90 @@
 import { useEffect, useState } from "react";
 import {
   DashboardHeader,
-  OrderMetrics,
   SalesMetrics,
   TopProductsTable,
   TopSellersTable,
 } from "../components/dashboard";
-import {
-  getResumen,
-  getVentasPorVendedor,
-  getVentasPorMes,
-  getProductosMasVendidos,
-} from "../api/services/analytics";
-import { getOrders } from "../api/services/orders";
+import { getSales } from "../api/services/sales";
+
+function computeAnalytics(sales) {
+  // Ventas por vendedor
+  const vendedorMap = {};
+  for (const sale of sales) {
+    const key = sale.vendorId;
+    if (!vendedorMap[key]) {
+      vendedorMap[key] = {
+        vendorId: sale.vendorId,
+        vendorName: sale.vendorName,
+        totalVentas: 0,
+        totalMonto: 0,
+      };
+    }
+    vendedorMap[key].totalVentas += 1;
+    vendedorMap[key].totalMonto += sale.total ?? 0;
+  }
+  const ventasPorVendedor = Object.values(vendedorMap).sort(
+    (a, b) => b.totalMonto - a.totalMonto
+  );
+
+  // Ventas por mes
+  const mesMap = {};
+  for (const sale of sales) {
+    if (!sale.saleDate) continue;
+    const mes = sale.saleDate.slice(0, 7); // "YYYY-MM"
+    if (!mesMap[mes]) mesMap[mes] = { mes, totalVentas: 0, totalMonto: 0 };
+    mesMap[mes].totalVentas += 1;
+    mesMap[mes].totalMonto += sale.total ?? 0;
+  }
+  const ventasPorMes = Object.values(mesMap).sort((a, b) =>
+    a.mes.localeCompare(b.mes)
+  );
+
+  // Productos más vendidos
+  const productoMap = {};
+  for (const sale of sales) {
+    for (const item of sale.items ?? []) {
+      const key = item.productId;
+      if (!productoMap[key]) {
+        productoMap[key] = {
+          productId: item.productId,
+          productName: item.productName,
+          cantidadVendida: 0,
+          montoTotal: 0,
+        };
+      }
+      productoMap[key].cantidadVendida += item.quantity ?? 0;
+      productoMap[key].montoTotal += item.subtotal ?? 0;
+    }
+  }
+  const productosMasVendidos = Object.values(productoMap).sort(
+    (a, b) => b.cantidadVendida - a.cantidadVendida
+  );
+
+  return { ventasPorVendedor, ventasPorMes, productosMasVendidos };
+}
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
-
-  const [ordenesMetricas, setOrdenesMetricas] = useState({
-    cancelados: 0,
-    exitosos: 0,
-    enProceso: 0,
-  });
-
   const [productosMasVendidos, setProductosMasVendidos] = useState([]);
   const [vendedoresTop, setVendedoresTop] = useState([]);
   const [ventasPorMes, setVentasPorMes] = useState([]);
   const [ventasPorVendedor, setVentasPorVendedor] = useState([]);
+  const [totalVentas, setTotalVentas] = useState(0);
+  const [totalMonto, setTotalMonto] = useState(0);
 
   useEffect(() => {
     async function loadAll() {
       try {
-        const [productos, vendedores, porMes, porVendedor, ordenes] =
-          await Promise.all([
-            getProductosMasVendidos(),
-            getVentasPorVendedor(),
-            getVentasPorMes(),
-            getVentasPorVendedor(),
-            getOrders(),
-          ]);
+        const sales = await getSales();
+        const { ventasPorVendedor, ventasPorMes, productosMasVendidos } =
+          computeAnalytics(sales);
 
-        // Mapear productos al formato que espera TopProductsTable
+        setVentasPorVendedor(ventasPorVendedor);
+        setVentasPorMes(ventasPorMes);
+
         setProductosMasVendidos(
-          productos.slice(0, 5).map((p) => ({
+          productosMasVendidos.slice(0, 5).map((p) => ({
             id: p.productId,
             nombre: p.productName,
             unidades: p.cantidadVendida,
@@ -50,9 +92,8 @@ function Dashboard() {
           }))
         );
 
-        // Mapear vendedores al formato que espera TopSellersTable
         setVendedoresTop(
-          vendedores.slice(0, 5).map((v) => ({
+          ventasPorVendedor.slice(0, 5).map((v) => ({
             id: v.vendorId,
             nombre: v.vendorName,
             ventas: v.totalVentas,
@@ -60,16 +101,10 @@ function Dashboard() {
           }))
         );
 
-        setVentasPorMes(porMes);
-        setVentasPorVendedor(porVendedor);
-
-        // Contar órdenes por estado
-        const cancelados = ordenes.filter((o) => o.status === "CANCELADO").length;
-        const exitosos = ordenes.filter((o) => o.status === "CONFIRMADO").length;
-        const enProceso = ordenes.filter((o) => o.status === "PENDIENTE").length;
-        setOrdenesMetricas({ cancelados, exitosos, enProceso });
+        setTotalVentas(sales.length);
+        setTotalMonto(sales.reduce((acc, s) => acc + (s.total ?? 0), 0));
       } catch (err) {
-        console.error("Error cargando analytics:", err);
+        console.error("Error cargando dashboard:", err);
       } finally {
         setLoading(false);
       }
@@ -95,11 +130,19 @@ function Dashboard() {
           backTo="/ventas"
         />
 
-        <OrderMetrics
-          cancelados={ordenesMetricas.cancelados}
-          exitosos={ordenesMetricas.exitosos}
-          enProceso={ordenesMetricas.enProceso}
-        />
+        {/* Resumen general */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-gray-600 rounded-2xl p-6">
+            <p className="text-gray-300 text-sm uppercase tracking-widest">Total ventas</p>
+            <p className="text-white text-3xl font-bold mt-1">{totalVentas}</p>
+          </div>
+          <div className="bg-gray-600 rounded-2xl p-6">
+            <p className="text-gray-300 text-sm uppercase tracking-widest">Total facturado</p>
+            <p className="text-white text-3xl font-bold mt-1">
+              ${totalMonto.toLocaleString("es-CO")}
+            </p>
+          </div>
+        </div>
 
         <SalesMetrics
           ventasPorMes={ventasPorMes}
