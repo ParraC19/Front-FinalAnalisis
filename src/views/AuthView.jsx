@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import LoginForm from "../components/LoginForm";
 import RegisterForm from "../components/RegisterForm";
 import ForgotPasswordForm from "../components/ForgotPasswordForm";
@@ -11,9 +11,9 @@ function AuthView() {
   const { isAuthenticated } = useAuth();
   const [mode, setMode] = useState(MODES.login);
 
-  /* if (isAuthenticated) {
+  if (isAuthenticated) {
     return <Navigate to="/ventas" replace />;
-  } */
+  }
 
   return (
         < >

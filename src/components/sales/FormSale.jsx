@@ -1,9 +1,21 @@
 import { useState } from "react";
+import Swal from "sweetalert2";
 import ProductList from "./ProductList";
 import ProductSearch from "./ProductSearch";
 import { useProducts } from "../../hooks/useProducts";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { createSale } from "../../api/services/sales";
+
+const TIENDAS = [
+  "AMERICANINO",
+  "CHEVIGNON",
+  "RIFLE",
+  "NAF_NAF",
+  "ESPRIT",
+  "AMERICAN_EAGLE",
+  "MANGO",
+  "CARRERA",
+];
 
 function FormSale({ onSaleCreated }) {
   const { user } = useAuth();
@@ -12,10 +24,10 @@ function FormSale({ onSaleCreated }) {
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState([]);
   const [saleDate, setSaleDate] = useState(new Date().toISOString().split("T")[0]);
+  const [saleType, setSaleType] = useState("LOCAL");
+  const [tienda, setTienda] = useState("");
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const onSelect = (product) => {
     setCart((prev) => {
@@ -37,18 +49,23 @@ function FormSale({ onSaleCreated }) {
       setSubmitError("Agrega al menos un producto a la venta.");
       return;
     }
-    if (!address.trim()) {
-      setSubmitError("La dirección es requerida.");
+    if (saleType === "LOCAL" && !tienda) {
+      setSubmitError("Selecciona una tienda para ventas locales.");
+      return;
+    }
+    if (saleType === "DOMICILIO" && !address.trim()) {
+      setSubmitError("La dirección es requerida para ventas a domicilio.");
       return;
     }
 
-    setSubmitError("");
     setSubmitting(true);
 
     const payload = {
       vendorId: user.id,
+      saleType,
+      tienda: saleType === "LOCAL" ? tienda : null,
+      address: saleType === "DOMICILIO" ? address.trim() : null,
       saleDate,
-      address: address.trim(),
       items: cart.map((item) => ({
         productId: item.id,
         quantity: item.qty,
@@ -59,11 +76,24 @@ function FormSale({ onSaleCreated }) {
       await createSale(payload);
       setCart([]);
       setAddress("");
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 3000);
+      setTienda("");
       onSaleCreated?.();
+      Swal.fire({
+        icon: "success",
+        title: "¡Venta registrada!",
+        text: "La venta fue registrada exitosamente.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Aceptar",
+        borderRadius: "1.5rem",
+      });
     } catch (err) {
-      setSubmitError(err.message || "Error al registrar la venta.");
+      Swal.fire({
+        icon: "error",
+        title: "Error al registrar",
+        text: err.message || "No se pudo registrar la venta. Intenta de nuevo.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Aceptar",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -109,18 +139,57 @@ function FormSale({ onSaleCreated }) {
               />
             </div>
             <div>
-              <label className="font-semibold text-sm text-gray-300 pb-1 block">
-                Dirección
+              <label className="font-semibold text-sm pb-1 block">
+                Tipo de venta
               </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:outline-none caret-white focus:placeholder-transparent"
-                placeholder="Dirección de entrega"
-                required
-              />
+              <select
+                value={saleType}
+                onChange={(e) => {
+                  setSaleType(e.target.value);
+                  setTienda("");
+                  setAddress("");
+                }}
+                className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-gray-500 focus:outline-none"
+              >
+                <option value="LOCAL">Local</option>
+                <option value="DOMICILIO">Domicilio</option>
+              </select>
             </div>
+            {saleType === "LOCAL" && (
+              <div>
+                <label className="font-semibold text-sm pb-1 block">
+                  Tienda
+                </label>
+                <select
+                  value={tienda}
+                  onChange={(e) => setTienda(e.target.value)}
+                  className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-gray-500 focus:outline-none"
+                  required
+                >
+                  <option value="">Selecciona una tienda</option>
+                  {TIENDAS.map((t) => (
+                    <option key={t} value={t}>
+                      {t.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {saleType === "DOMICILIO" && (
+              <div>
+                <label className="font-semibold text-sm text-gray-300 pb-1 block">
+                  Dirección
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="border-x-2 border-b-2 rounded-4xl border-white py-2 px-2 mt-1 w-full text-sm text-white bg-transparent focus:border-gray-200 focus:outline-none caret-white focus:placeholder-transparent"
+                  placeholder="Dirección de entrega"
+                  required
+                />
+              </div>
+            )}
             <div>
               <label className="font-semibold text-sm text-gray-300 pb-1 block">
                 Buscar producto
@@ -141,15 +210,6 @@ function FormSale({ onSaleCreated }) {
               )}
             </div>
           </div>
-
-          {submitError && (
-            <p className="text-sm text-red-400 px-4">{submitError}</p>
-          )}
-          {submitSuccess && (
-            <p className="text-sm text-green-400 px-4">
-              ¡Venta registrada exitosamente!
-            </p>
-          )}
 
           <div className="flex justify-center">
             <button
