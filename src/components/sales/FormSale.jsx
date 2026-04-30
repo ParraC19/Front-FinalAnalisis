@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Swal from "sweetalert2";
 import ProductList from "./ProductList";
 import ProductSearch from "./ProductSearch";
 import { useProducts } from "../../hooks/useProducts";
@@ -27,8 +28,6 @@ function FormSale({ onSaleCreated }) {
   const [tienda, setTienda] = useState("");
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const onSelect = (product) => {
     setCart((prev) => {
@@ -59,7 +58,6 @@ function FormSale({ onSaleCreated }) {
       return;
     }
 
-    setSubmitError("");
     setSubmitting(true);
 
     const payload = {
@@ -79,11 +77,23 @@ function FormSale({ onSaleCreated }) {
       setCart([]);
       setAddress("");
       setTienda("");
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 3000);
       onSaleCreated?.();
+      Swal.fire({
+        icon: "success",
+        title: "¡Venta registrada!",
+        text: "La venta fue registrada exitosamente.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Aceptar",
+        borderRadius: "1.5rem",
+      });
     } catch (err) {
-      setSubmitError(err.message || "Error al registrar la venta.");
+      Swal.fire({
+        icon: "error",
+        title: "Error al registrar",
+        text: err.message || "No se pudo registrar la venta. Intenta de nuevo.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Aceptar",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -200,15 +210,6 @@ function FormSale({ onSaleCreated }) {
               )}
             </div>
           </div>
-
-          {submitError && (
-            <p className="text-sm text-red-400 px-4">{submitError}</p>
-          )}
-          {submitSuccess && (
-            <p className="text-sm text-green-400 px-4">
-              ¡Venta registrada exitosamente!
-            </p>
-          )}
 
           <div className="flex justify-center">
             <button

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { login as loginService } from "../api/services/auth";
-import { AuthContext } from "./authContext";
+import { AuthContext } from "./authContextInstance";
 
 const SESSION_KEY = "auth_user";
 

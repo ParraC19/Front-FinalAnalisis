@@ -33,7 +33,7 @@ function Home() {
               </div>
             </div>
           </div>
-          <div className="w-1/2 flex justify-center items-center">
+          <div className="w-1/2 flex justify-center items-center overflow-y-auto py-4">
               <AuthView />
           </div>
         </section>

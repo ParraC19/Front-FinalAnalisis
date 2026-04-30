@@ -1,17 +1,25 @@
-import { apiClient } from "../client";
+import { pythonClient } from "../pythonClient";
 
-export async function getResumen() {
-  return await apiClient.get("/analytics/resumen");
+export async function getEstadisticas() {
+  return await pythonClient.get("/estadisticas");
 }
 
 export async function getVentasPorVendedor() {
-  return await apiClient.get("/analytics/ventas-por-vendedor");
+  return await pythonClient.get("/ventas-por-vendedor");
 }
 
 export async function getVentasPorMes() {
-  return await apiClient.get("/analytics/ventas-por-mes");
+  return await pythonClient.get("/ventas-por-mes");
 }
 
 export async function getProductosMasVendidos() {
-  return await apiClient.get("/analytics/productos-mas-vendidos");
+  return await pythonClient.get("/productos-mas-vendidos");
+}
+
+export async function getVentasCrudas() {
+  return await pythonClient.get("/ventas-limpias");
+}
+
+export async function regenerarDatos() {
+  return await pythonClient.post("/regenerar");
 }

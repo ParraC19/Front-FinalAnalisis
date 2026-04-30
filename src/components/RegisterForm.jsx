@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Swal from "sweetalert2";
 import { register } from "../api/services/auth";
 
 const inputClass =
@@ -12,8 +13,6 @@ function RegisterForm({ onSwitchToLogin }) {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -22,10 +21,15 @@ function RegisterForm({ onSwitchToLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     if (form.password !== form.confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      Swal.fire({
+        icon: "warning",
+        title: "Contraseñas distintas",
+        text: "Las contraseñas no coinciden. Verifica e intenta de nuevo.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Entendido",
+      });
       return;
     }
 
@@ -40,34 +44,36 @@ function RegisterForm({ onSwitchToLogin }) {
 
     try {
       await register(payload);
-      setSuccess(true);
-      setTimeout(() => onSwitchToLogin?.(), 1500);
+      await Swal.fire({
+        icon: "success",
+        title: "¡Cuenta creada!",
+        text: "Tu código de vendedor fue generado automáticamente. Ya puedes iniciar sesión.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Ir al login",
+      });
+      onSwitchToLogin?.();
     } catch (err) {
-      setError(err.message || "No se pudo crear la cuenta.");
+      Swal.fire({
+        icon: "error",
+        title: "Error al registrar",
+        text: err.message || "No se pudo crear la cuenta. Intenta de nuevo.",
+        confirmButtonColor: "#4b5563",
+        confirmButtonText: "Aceptar",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div className="w-full max-w-sm text-center">
-        <p className="text-sm sm:text-base text-green-400">
-          Cuenta creada. Tu código de vendedor se generó automáticamente. Redirigiendo...
-        </p>
-      </div>
-    );
-  }
-
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-sm bg-gray-500 p-8 rounded-4xl overflow-y-auto max-h-[90vh]"
+      className="w-full max-w-sm bg-gray-500 p-8 rounded-4xl overflow-y-auto max-h-[78vh]"
     >
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 text-center">
         Crear cuenta
       </h2>
-      <p className="text-sm sm:text-base text-white mb-6 text-center">
+      <p className="text-sm text-white mb-6 text-center">
         Completa tus datos para registrarte como vendedor
       </p>
 
@@ -94,12 +100,6 @@ function RegisterForm({ onSwitchToLogin }) {
       <p className="text-xs text-gray-300 mb-4 text-center">
         Tu código de vendedor se generará automáticamente al registrarte.
       </p>
-
-      {error && (
-        <p className="text-sm text-red-400 mb-3" role="alert">
-          {error}
-        </p>
-      )}
 
       <button
         type="submit"
